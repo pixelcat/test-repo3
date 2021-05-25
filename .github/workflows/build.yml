@@ -1,0 +1,32 @@
+name: Build Project
+on:
+  push:
+    branches:
+      - main
+      - master
+      - releases/*
+    tags:
+      - v*
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up deps
+        run: |
+          sudo apt install -y make
+      - name: Build Docker Image
+        run: |
+          make docker-build
+      - name: Test Docker Image
+        run: |
+          make docker-test
+      - name: Publish Docker Image
+        run: |
+          make docker-publish
+      - name: Trigger Tag Release workflow
+        if: github.ref == 'refs/heads/main'
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.TAGGING_AUTH_TOKEN }}
+          event-type: tag-release
